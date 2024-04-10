@@ -1,42 +1,42 @@
 # Important imports
 from app import app
-# from Flask import flask
-from flask import request, render_template, url_for
+from flask import request, render_template
 from keras import models
 import numpy as np
 from PIL import Image
 import string
 import random
 import os
+from sklearn.metrics import f1_score
 
 # Adding path to config
 app.config['INITIAL_FILE_UPLOADS'] = 'app/static/uploads'
 
 # Loading model
-model = models.load_model('D:/DL/practice/birds_species_pred/Birds_species/app/static/model/DenseNet121_model.h5')
+model = models.load_model('app/static/model/InceptionV3_model.h5')
 
 # Route to home page
 @app.route("/", methods=["GET", "POST"])
 def index():
 
-	# Execute if request is get
-	if request.method == "GET":
-		full_filename =  'images/white_bg.jpg'
-		return render_template("index.html", full_filename = full_filename)
+    # Execute if request is GET
+    if request.method == "GET":
+        full_filename =  'images/white_bg.jpg'
+        return render_template("index.html", full_filename=full_filename)
 
-	# Execute if reuqest is post
-	if request.method == "POST":
+    # Execute if request is POST
+    if request.method == "POST":
 
-		# Generating unique image name
-		letters = string.ascii_lowercase
-		name = ''.join(random.choice(letters) for i in range(10)) + '.png'
-		full_filename =  'uploads/' + name
+        # Generating unique image name
+        letters = string.ascii_lowercase
+        name = ''.join(random.choice(letters) for i in range(10)) + '.png'
+        full_filename = 'uploads/' + name
 
-		image_upload = request.files['image_upload']
+        image_upload = request.files['image_upload']
   
-    	if image_upload.filename.split('.')[-1] not in ['jpg', 'jpeg', 'png']:
-          return "Unsupported file format. Please upload an image file with .jpg, .jpeg, or .png extension."
-        
+        if image_upload.filename.split('.')[-1] not in ['jpg', 'jpeg', 'png']:
+            return "Unsupported file format. Please upload an image file with .jpg, .jpeg, or .png extension."
+
         image = Image.open(image_upload)
         image = image.resize((224, 224))
         image.save(os.path.join(app.config['INITIAL_FILE_UPLOADS'], name))
@@ -44,8 +44,9 @@ def index():
 
         # Predicting output
         result = model.predict(np.expand_dims(image_arr, axis=0))
+        print(result)
         ind = np.argmax(result)
-		classes =['ANTILLEAN EUPHONIA', 'SAYS PHOEBE', 'GREEN MAGPIE', 'BELTED KINGFISHER', 'DEMOISELLE CRANE', 'BANDED STILT', 'BLACK THROATED WARBLER', 
+        classes =['ANTILLEAN EUPHONIA', 'SAYS PHOEBE', 'GREEN MAGPIE', 'BELTED KINGFISHER', 'DEMOISELLE CRANE', 'BANDED STILT', 'BLACK THROATED WARBLER', 
             'RUFOUS TREPE', 'HORNED GUAN', 'AMERICAN COOT', 'ELEGANT TROGON', 'DUNLIN',
             'VERMILION FLYCATHER', 'AFRICAN CROWNED CRANE', 'PARADISE TANAGER', 'JABIRU',
             'SANDHILL CRANE', 'WILD TURKEY', 'CLARKS GREBE', 'TASMANIAN HEN', 'JANDAYA PARAKEET',
@@ -144,11 +145,9 @@ def index():
             'BLUE DACNIS', 'RED WINGED BLACKBIRD', 'CABOTS TRAGOPAN', 'GREAT KISKADEE', 'IBISBILL', 'BANANAQUIT', 
             'BROWN THRASHER', 'ALTAMIRA YELLOWTHROAT', 'DUSKY ROBIN', 'BUSH TURKEY', 'SATYR TRAGOPAN', 'CALIFORNIA CONDOR', 
             'GOLDEN PHEASANT']
-
-		prediction = classes[ind]
-
+        print("index ->",ind,"class ->",classes[ind])
         # Returning template, filename, and prediction
-        return render_template('index.html', full_filename=full_filename, pred=prediction)
+        return render_template('index.html', full_filename=full_filename, pred=classes[ind])
 
 # Main function
 if __name__ == '__main__':
